@@ -1,8 +1,8 @@
 package main
 
 import (
-	apipb "REST-gRPC-Fibonacci/api/proto"
-	"REST-gRPC-Fibonacci/fibonacci"
+	apipb "REST-gRPC-Fibonacci/pkg/api/proto"
+	"REST-gRPC-Fibonacci/pkg/fibonacci"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -22,6 +22,5 @@ func main() {
 	if errS := s.Serve(l); errS != nil {
 		log.Fatal(errS)
 	}
-
 
 }
