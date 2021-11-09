@@ -2,5 +2,5 @@
 
 created proto:
 ```
-    protoc -I api/proto --go_out=plugins=grpc:pkg/api api/proto/fibonachi.proto
+    protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative api/proto/fibonacci.proto
 ```
