@@ -1,3 +1,3 @@
-module _REST-gRPC-Fibonacci
+module REST-gRPC-Fibonacci
 
 go 1.17
