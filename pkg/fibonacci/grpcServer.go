@@ -22,7 +22,7 @@ func fibonacci() func() int {
 }
 
 // Returns a slice of a sequence of numbers from the Fibonacci series from x to y
-func getFibonacciSlice(x, y int) []int {
+func GetFibonacciSlice(x, y int) []int {
 	f := fibonacci()
 	var result []int
 	for i := 0; i <= y; i++ {
@@ -38,7 +38,7 @@ func (s *GRPCServer) GetFibonacci(ctx context.Context, req *apipb.FibonacciReque
 
 	x := int(req.GetX())
 	y := int(req.GetY())
-	slice := getFibonacciSlice(x, y)
+	slice := GetFibonacciSlice(x, y)
 	result := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(slice)), ", "), "[]")
 	//fmt.Println(x, y, slice, result)
 
