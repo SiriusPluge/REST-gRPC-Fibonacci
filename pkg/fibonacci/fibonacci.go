@@ -4,19 +4,12 @@ import (
 	"REST-gRPC-Fibonacci/pkg/api/proto"
 	"context"
 	"fmt"
-	"log"
-	"strings"
 	"github.com/go-redis/redis/v8"
-	"github.com/go-redis/cache/v8"
-	"time"
+	"strings"
 )
 
 type GRPCServer struct {
 	apipb.UnimplementedGetFibonacciServiceServer
-}
-
-type Object struct {
-    slice []int
 }
 
 // Calculating a number from the Fibonacci sequence
@@ -47,44 +40,34 @@ func (s *GRPCServer) GetFibonacci(ctx context.Context, req *apipb.FibonacciReque
 	x := int(req.GetX())
 	y := int(req.GetY())
 
-	ring := redis.NewRing(&redis.RingOptions{
-        Addrs: map[string]string{
-            "server1": ":6379",
-            "server2": ":6380",
-        },
+	rdb := redis.NewClient(&redis.Options{
+        Addr:     "localhost:6379",
+        Password: "", // no password set
+        DB:       0,  // use default DB
     })
 
-	cacheSliceFibonacci := cache.New(&cache.Options{
-        Redis:      ring,
-        LocalCache: cache.NewTinyLFU(1000, time.Minute),
-    })
-	key := string(x) + "" + string(y)
+	key := string(x) + " " + string(y)
+	fmt.Println(key)
 
-	var checkSlice []int
-	errGetCache := cacheSliceFibonacci.Get(ctx, key, &checkSlice)
-	if errGetCache != nil {
-		log.Fatal(errGetCache)
-	}
-
-	if checkSlice == nil {
+	val1, err := rdb.Get(ctx, key).Result()
+    if err == redis.Nil {
+        fmt.Println("key2 does not exist")
 
 		slice := GetFibonacciSlice(x, y)
-
-		if err := cacheSliceFibonacci.Set(&cache.Item{
-        	Ctx:   ctx,
-       	 	Key:   key,
-        	Value: slice,
-        	TTL:   time.Hour,
-		}); err != nil {
-			panic(err)
-		}
-
 		result := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(slice)), ", "), "[]")
 
+		 err := rdb.Set(ctx, key, result, 0).Err()
+    	if err != nil {
+        	panic(err)
+    	}
+
 		return &apipb.FibonacciResponse{Result: result}, nil
-	}
 
-	result := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(checkSlice)), ", "), "[]")
+    } else if err != nil {
+        panic(err)
+    } else {
+        fmt.Println(key, val1)
 
-	return &apipb.FibonacciResponse{Result: result}, nil
+		return &apipb.FibonacciResponse{Result: val1}, nil
+    }
 }

@@ -5,13 +5,20 @@ import (
 	"REST-gRPC-Fibonacci/pkg/fibonacci"
 	"REST-gRPC-Fibonacci/pkgHTTP"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"google.golang.org/grpc"
 	"log"
 	"net"
 	"os"
 	"os/signal"
+	"time"
 )
 
+var myCache CacheItf
+
+type RedisCache struct {
+	client *redis.Client
+}
 
 func main() {
 
@@ -75,3 +82,19 @@ func main() {
 	//}
 
 }
+
+type CacheItf interface {
+	Set(key string, data interface{}, expiration time.Duration) error
+	Get(key string) ([]byte, error)
+}
+
+//func InitRedisCache() {
+//	myCache = &RedisCache{
+//		client: redis.NewClient(&redis.Options{
+//			Addr:     "localhost:6379",
+//			Password: "", // no password set
+//			DB:       0,  // use default DB
+//		}),
+//	}
+//
+//}

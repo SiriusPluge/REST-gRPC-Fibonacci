@@ -2,8 +2,12 @@ package pkgHTTP
 
 import (
 	"REST-gRPC-Fibonacci/pkg/fibonacci"
+	"context"
 	"encoding/json"
+	"fmt"
+	"github.com/go-redis/redis/v8"
 	"net/http"
+	"strings"
 )
 
 type FibVar struct {
@@ -32,26 +36,6 @@ type FibVar struct {
 
 func GetFibonacci(w http.ResponseWriter, req *http.Request)  {
 
-	//contentType := req.Header.Get("Content-Type")
-	//mediatype, _, err := mime.ParseMediaType(contentType)
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusBadRequest)
-	//}
-	//if mediatype != "application/json" {
-	//	http.Error(w, "expect application/json Content-Type", http.StatusUnsupportedMediaType)
-	//}
-	//
-	//var jsonData FibVar
-	//jsonDataFromHttp, err := ioutil.ReadAll(req.Body)
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//err = json.Unmarshal(jsonDataFromHttp, &jsonData)
-	//if err != nil {
-	//	panic(err)
-	//}
-
 	w.Header().Set("Content-Type", "application/json")
 
 	var jsonData FibVar
@@ -61,15 +45,46 @@ func GetFibonacci(w http.ResponseWriter, req *http.Request)  {
 		return
 	}
 
-	//result := returningFib(fib, jsonData.X, jsonData.Y)
+	rdb := redis.NewClient(&redis.Options{
+        Addr:     "localhost:6379",
+        Password: "", // no password set
+        DB:       0,  // use default DB
+    })
 
-	slice := fibonacci.GetFibonacciSlice(jsonData.X, jsonData.Y)
+	key := string(jsonData.X) + " " + string(jsonData.Y)
+	ctx := context.Background()
 
-	js, err := json.Marshal(slice)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
+	val1, err := rdb.Get(ctx, key).Result()
+    if err == redis.Nil {
+        fmt.Println("key2 does not exist")
+
+		slice := fibonacci.GetFibonacciSlice(jsonData.X, jsonData.Y)
+		result := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(slice)), ", "), "[]")
+
+		 err := rdb.Set(ctx, key, result, 0).Err()
+    	if err != nil {
+        	panic(err)
+    	}
+
+		js, err := json.Marshal(slice)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(js)
+
+    } else if err != nil {
+        panic(err)
+    } else {
+        fmt.Println(key, val1)
+
+		js, err := json.Marshal(val1)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(js)
+    }
 }
