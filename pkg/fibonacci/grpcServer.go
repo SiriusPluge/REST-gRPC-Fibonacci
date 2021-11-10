@@ -4,6 +4,7 @@ import (
 	"REST-gRPC-Fibonacci/pkg/api/proto"
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"github.com/go-redis/redis/v8"
 	"github.com/go-redis/cache/v8"
@@ -53,31 +54,37 @@ func (s *GRPCServer) GetFibonacci(ctx context.Context, req *apipb.FibonacciReque
         },
     })
 
-	mycache := cache.New(&cache.Options{
+	cacheSliceFibonacci := cache.New(&cache.Options{
         Redis:      ring,
         LocalCache: cache.NewTinyLFU(1000, time.Minute),
     })
-
-	slice := GetFibonacciSlice(x, y)
-	result := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(slice)), ", "), "[]")
-
 	key := string(x) + "" + string(y)
-	fmt.Println(key)
 
-	if err := mycache.Set(&cache.Item{
-        Ctx:   ctx,
-        Key:   key,
-        Value: slice,
-        TTL:   time.Hour,
-    }); err != nil {
-        panic(err)
-    }
+	var checkSlice []int
+	errGetCache := cacheSliceFibonacci.Get(ctx, key, &checkSlice)
+	if errGetCache != nil {
+		log.Fatal(errGetCache)
+	}
 
-	var wanted Object
-    if err := mycache.Get(ctx, key, &wanted); err == nil {
-        fmt.Println(wanted)
-    }
-	fmt.Println(wanted)
+	if checkSlice == nil {
+
+		slice := GetFibonacciSlice(x, y)
+
+		if err := cacheSliceFibonacci.Set(&cache.Item{
+        	Ctx:   ctx,
+       	 	Key:   key,
+        	Value: slice,
+        	TTL:   time.Hour,
+		}); err != nil {
+			panic(err)
+		}
+
+		result := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(slice)), ", "), "[]")
+
+		return &apipb.FibonacciResponse{Result: result}, nil
+	}
+
+	result := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(checkSlice)), ", "), "[]")
 
 	return &apipb.FibonacciResponse{Result: result}, nil
 }
