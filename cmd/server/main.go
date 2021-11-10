@@ -5,13 +5,13 @@ import (
 	"REST-gRPC-Fibonacci/pkg/fibonacci"
 	"REST-gRPC-Fibonacci/pkgHTTP"
 	"fmt"
-	"github.com/gomodule/redigo/redis"
 	"google.golang.org/grpc"
 	"log"
 	"net"
 	"os"
 	"os/signal"
 )
+
 
 func main() {
 
@@ -37,11 +37,11 @@ func main() {
 	}()
 	fmt.Println("Server succesfully started on port :8080")
 
-	cache, err := redis.Dial("tcp", ":6379")
-		if err != nil {
-    		log.Fatal(err) // handle error
-		}
-	defer cache.Close()
+	//cache, err := redis.Dial("tcp", ":6379")
+	//	if err != nil {
+    //		log.Fatal(err) // handle error
+	//	}
+	//defer cache.Close()
 
 	c := make(chan os.Signal)
 

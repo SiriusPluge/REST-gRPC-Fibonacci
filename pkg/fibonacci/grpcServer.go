@@ -5,10 +5,17 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"github.com/go-redis/redis/v8"
+	"github.com/go-redis/cache/v8"
+	"time"
 )
 
 type GRPCServer struct {
 	apipb.UnimplementedGetFibonacciServiceServer
+}
+
+type Object struct {
+    slice []int
 }
 
 // Calculating a number from the Fibonacci sequence
@@ -38,9 +45,39 @@ func (s *GRPCServer) GetFibonacci(ctx context.Context, req *apipb.FibonacciReque
 
 	x := int(req.GetX())
 	y := int(req.GetY())
+
+	ring := redis.NewRing(&redis.RingOptions{
+        Addrs: map[string]string{
+            "server1": ":6379",
+            "server2": ":6380",
+        },
+    })
+
+	mycache := cache.New(&cache.Options{
+        Redis:      ring,
+        LocalCache: cache.NewTinyLFU(1000, time.Minute),
+    })
+
 	slice := GetFibonacciSlice(x, y)
 	result := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(slice)), ", "), "[]")
-	//fmt.Println(x, y, slice, result)
+
+	key := string(x) + "" + string(y)
+	fmt.Println(key)
+
+	if err := mycache.Set(&cache.Item{
+        Ctx:   ctx,
+        Key:   key,
+        Value: slice,
+        TTL:   time.Hour,
+    }); err != nil {
+        panic(err)
+    }
+
+	var wanted Object
+    if err := mycache.Get(ctx, key, &wanted); err == nil {
+        fmt.Println(wanted)
+    }
+	fmt.Println(wanted)
 
 	return &apipb.FibonacciResponse{Result: result}, nil
 }
