@@ -58,7 +58,7 @@ func GetFibonacci(w http.ResponseWriter, req *http.Request)  {
     if err == redis.Nil {
         fmt.Println("key2 does not exist")
 
-		slice := fibonacci.GetFibonacciSlice(jsonData.X, jsonData.Y)
+		slice := fibonacci.GetFibonacciSlice(int64(jsonData.X), int64(jsonData.Y))
 		result := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(slice)), ", "), "[]")
 
 		 err := rdb.Set(ctx, key, result, 0).Err()

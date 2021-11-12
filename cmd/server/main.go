@@ -11,10 +11,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"time"
 )
-
-var myCache CacheItf
 
 type RedisCache struct {
 	client *redis.Client
@@ -44,12 +41,6 @@ func main() {
 	}()
 	fmt.Println("Server succesfully started on port :8080")
 
-	//cache, err := redis.Dial("tcp", ":6379")
-	//	if err != nil {
-    //		log.Fatal(err) // handle error
-	//	}
-	//defer cache.Close()
-
 	c := make(chan os.Signal)
 
 	signal.Notify(c, os.Interrupt)
@@ -67,34 +58,4 @@ func main() {
 	listener.Close()
 
 	log.Println("Done.")
-
-	//s := grpc.NewServer()
-	//srv := &fibonacci.GRPCServer{}
-	//apipb.RegisterGetFibonacciServiceServer(s, srv)
-	//
-	//l, err := net.Listen("tcp", ":8080")
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//
-	//if errS := s.Serve(l); errS != nil {
-	//	log.Fatal(errS)
-	//}
-
 }
-
-type CacheItf interface {
-	Set(key string, data interface{}, expiration time.Duration) error
-	Get(key string) ([]byte, error)
-}
-
-//func InitRedisCache() {
-//	myCache = &RedisCache{
-//		client: redis.NewClient(&redis.Options{
-//			Addr:     "localhost:6379",
-//			Password: "", // no password set
-//			DB:       0,  // use default DB
-//		}),
-//	}
-//
-//}
